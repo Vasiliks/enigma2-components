@@ -43,4 +43,3 @@ class FlashingDotClock(Converter, object):
 				return dt.strftime('%H.%M')
 
 	text = property(getText)
-

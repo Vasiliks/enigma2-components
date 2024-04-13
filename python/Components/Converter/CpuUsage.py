@@ -1,24 +1,31 @@
-# -*- coding: utf-8 -*-
+#
+# CpuUsage Converter for Enigma2 (CpuUsage.py)
+# Coded by vlamo (c) 2012
+#
+# Version: 0.4 (11.04.2012 14:05)
+# Support: http://dream.altmaster.net/
+# 27.05.2022 py3
+
 from Components.Converter.Converter import Converter
 from Components.Converter.Poll import Poll
 from Components.Element import cached
-from Tools.Directories import fileReadLines
 
 
 class CpuUsage(Converter, object):
-	CPU_ALL = -2
+	CPU_ALL   = -2
 	CPU_TOTAL = -1
 
 	def __init__(self, type):
 		Converter.__init__(self, type)
-		self.percentList = []
+		
+		self.percentlist = [ ]
 		self.pfmt = "%3d%%"
 		if not type or type == "Total":
 			self.type = self.CPU_TOTAL
 			self.sfmt = "CPU: $0"
 		elif len(type) == 1 and type[0].isdigit():
 			self.type = int(type)
-			self.sfmt = "$%d" % type
+			self.sfmt = "$" + type
 			self.pfmt = "%d"
 		else:
 			self.type = self.CPU_ALL
@@ -28,12 +35,11 @@ class CpuUsage(Converter, object):
 				pos = 0
 				while True:
 					pos = self.sfmt.find("$", pos)
-					if pos == -1:
-						break
-					if pos < len(self.sfmt) - 1 and \
-						self.sfmt[pos + 1].isdigit() and \
-						int(self.sfmt[pos + 1]) > cpus:
-						self.sfmt = self.sfmt.replace("$%s" % self.sfmt[pos + 1], "N/A")
+					if pos == -1: break
+					if pos < len(self.sfmt)-1 and \
+					   self.sfmt[pos+1].isdigit() and \
+					   int(self.sfmt[pos+1]) > cpus:
+						self.sfmt = self.sfmt.replace("$" + self.sfmt[pos+1], "n/a")
 					pos += 1
 
 	def doSuspend(self, suspended):
@@ -42,23 +48,31 @@ class CpuUsage(Converter, object):
 		else:
 			cpuUsageMonitor.connectCallback(self.gotPercentage)
 
-	def gotPercentage(self, percentList):
-		self.percentList = percentList
+	def gotPercentage(self, list):
+		self.percentlist = list
 		self.changed((self.CHANGED_POLL,))
 
 	@cached
 	def getText(self):
-		result = self.sfmt[:]
-		if not self.percentList:
-			self.percentList = [0] * 3
-		for index in range(len(self.percentList)):
-			result = result.replace("$%d" % index, self.pfmt % (self.percentList[index]))
-		result = result.replace("$?", "%d" % (len(self.percentList) - 1))
-		return result
+		res = self.sfmt[:]
+		if not self.percentlist:
+			self.percentlist = [0] * 3
+		for i in range(len(self.percentlist)):
+			res = res.replace("$" + str(i), self.pfmt%(self.percentlist[i]))
+		res = res.replace("$?", "%d" % (len(self.percentlist)-1))
+		return res
 
 	@cached
 	def getValue(self):
-		return self.percentList[self.type if self.type > 0 and self.type < len(self.percentList) else 0]
+		if self.type in range(len(self.percentlist)):
+			i = self.type
+		else:
+			i = 0
+		try:
+			value = self.percentlist[i]
+		except IndexError:
+			value = 0
+		return value
 
 	text = property(getText)
 	value = property(getValue)
@@ -69,43 +83,47 @@ class CpuUsageMonitor(Poll, object):
 
 	def __init__(self):
 		Poll.__init__(self)
-		self.__callbacks = []
+		self.__callbacks = [ ]
 		self.__curr_info = self.getCpusInfo()
-		self.poll_interval = 500  # Why update twice a second?  Users can't absorb the changes that fast.
+		self.poll_interval = 500
 
 	def getCpusCount(self):
 		return len(self.__curr_info) - 1
 
 	def getCpusInfo(self):
-		results = []
-		lines = fileReadLines("/proc/stat", [])
-		for line in lines:
-			if line.startswith("cpu"):
-				# data = [cpu, usr, nic, sys, idle, iowait, irq, softirq, steal]
-				data = line.split()
-				total = 0
-				for item in range(1, len(data)):
-					data[item] = int(data[item])
-					total += data[item]
-				# busy = total - idle - iowait
-				busy = total - data[4] - data[5]
-				# append [cpu, total, busy]
-				results.append([data[0], total, busy])
-		return results
+		res = []
+		try:
+			fd = open("/proc/stat", "r")
+			for l in fd:
+				if l.find("cpu") == 0:
+					total = busy = 0
+					# tmp = [cpu, usr, nic, sys, idle, iowait, irq, softirq, steal]
+					tmp = l.split()
+					for i in range(1, len(tmp)):
+						tmp[i] = int(tmp[i])
+						total += tmp[i]
+					# busy = total - idle - iowait
+					busy = total - tmp[4] - tmp[5]
+					# append [cpu, total, busy]
+					res.append([tmp[0], total, busy])
+			fd.close()
+		except:
+			pass
+		return res
 
 	def poll(self):
 		prev_info, self.__curr_info = self.__curr_info, self.getCpusInfo()
 		if len(self.__callbacks):
-			info = []
-			for index in range(len(self.__curr_info)):
+			info = [ ]
+			for i in range(len(self.__curr_info)):
 				# xxx% = (cur_xxx - prev_xxx) / (cur_total - prev_total) * 100
 				try:
-					percentage = 100 * (self.__curr_info[index][2] - prev_info[index][2]) / (self.__curr_info[index][1] - prev_info[index][1])
+					p = 100 * ( self.__curr_info[i][2] - prev_info[i][2] ) / ( self.__curr_info[i][1] - prev_info[i][1] )
 				except ZeroDivisionError:
-					percentage = 0
-				info.append(percentage)
-			for callback in self.__callbacks:
-				callback(info)
+					p = 0
+				info.append(p)
+			for f in self.__callbacks:
+				f(info)
 
 	def connectCallback(self, func):
 		if not func in self.__callbacks:
@@ -120,5 +138,5 @@ class CpuUsageMonitor(Poll, object):
 		if not len(self.__callbacks) and self.poll_enabled:
 			self.poll_enabled = False
 
-
 cpuUsageMonitor = CpuUsageMonitor()
+

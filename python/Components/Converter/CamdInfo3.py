@@ -8,10 +8,8 @@
 
 from Components.Converter.Converter import Converter
 from Components.Converter.Poll import Poll
-from Components.ConfigList import ConfigListScreen
 from Components.Element import cached
-from Components.config import config, getConfigListEntry, ConfigText, ConfigPassword, ConfigClock, ConfigSelection, ConfigSubsection, ConfigYesNo, configfile, NoSave
-from enigma import iServiceInformation
+from Components.config import config
 import os
 
 class CamdInfo3(Poll, Converter, object):

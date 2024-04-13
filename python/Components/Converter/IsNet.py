@@ -15,10 +15,10 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from Components.Converter.Converter import Converter
-from Components.Converter.Poll import Poll
 from Components.Element import cached
-import urllib2
-#import urllib.request, urllib.error, urllib.parse
+from Components.Converter.Poll import Poll
+from six.moves.urllib.request import urlopen
+from six.moves.urllib.error import URLError
 
 class IsNet(Poll, Converter, object):
 	def __init__(self, type):
@@ -30,10 +30,9 @@ class IsNet(Poll, Converter, object):
 	@cached
 	def getBoolean(self):
 		try:
-			response = urllib2.urlopen('http://8.8.8.8', timeout = 1)
-			#response = urllib2.urlopen('http://194.50.85.97', timeout = 1)
+			response = urlopen('http://8.8.8.8', timeout = 1)
 			return True
-		except urllib2.URLError as err: pass
+		except URLError as err: pass
 		return False
 		
 	boolean = property(getBoolean)

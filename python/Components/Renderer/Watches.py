@@ -15,12 +15,12 @@
 #    
 #######################################################################
 
-from Components.Renderer.Renderer import Renderer
-from Components.VariableText import VariableText
-from Components.config import config
-from enigma import eCanvas, eSize, gRGB, eRect
-from skin import parseColor
+# 20.04.2022 code optimization for Python2 & Python3
+
 import math
+from Components.Renderer.Renderer import Renderer
+from skin import parseColor
+from enigma import eCanvas, eSize, gRGB, eRect
 
 class Watches(Renderer):
 
@@ -54,7 +54,7 @@ class Watches(Renderer):
 	def hand(self):
 		width = self.instance.size().width()
 		height = self.instance.size().height()
-		r = (min(width, height) / 2)
+		r = int(min(width, height) / 2)
 		(endX, endY,) = self.calculate(self.numval, r, r)
 		self.draw_line(r, r, endX, endY)
 
@@ -74,7 +74,7 @@ class Watches(Renderer):
 		deltay = abs(y1 - y0)
 		error = -deltax / 2
 		y = y0
-		for x in range(x0, x1 + 1):
+		for x in list(range(x0, x1 + 1)):
 			if steep:
 				self.instance.fillRect(eRect(y, x, 1, 2), self.fColor)
 			else:

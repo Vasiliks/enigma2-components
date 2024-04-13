@@ -1,8 +1,14 @@
-# -*- coding: utf-8 -*-
+#
+# ConverterRotator Converter for Enigma2 (ConverterRotator.py)
+# Coded by vlamo (c) 2012
+#
+# Version: 0.2 (27.05.2012 04:05)
+# Support: http://dream.altmaster.net/
+# 27.05.2022 2boom fix py3
+#
 from Components.Converter.Converter import Converter
 from Components.Converter.Poll import Poll
 from Components.Element import cached
-
 
 class ConverterRotator(Poll, Converter, object):
 	"""Static Text Converter Rotator"""
@@ -11,7 +17,7 @@ class ConverterRotator(Poll, Converter, object):
 		Poll.__init__(self)
 		Converter.__init__(self, type)
 		self.mainstream = None
-		self.sourceList = []
+		self.sourceList = [ ]
 		self.sourceIndex = -1
 		if type and type.isdigit():
 			self.poll_interval = int(type) * 1000
