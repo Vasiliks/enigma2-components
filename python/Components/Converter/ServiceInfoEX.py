@@ -254,7 +254,7 @@ class ServiceInfoEX(Poll, Converter, object):
 			audio = service.audioTracks()
 			if audio:
 				if audio.getCurrentTrack() > -1:
-					self.stream['atype'] = str(audio.getTrackInfo(audio.getCurrentTrack()).getDescription()).replace(" audio","").replace(" ","_")
+					self.stream['atype'] = str(audio.getTrackInfo(audio.getCurrentTrack()).getDescription()).replace(" audio","")
 			self.stream['vtype'] = codec_data[info.getInfo(iServiceInformation.sVideoType)]
 			self.stream['avtype'] = self.stream['vtype'] + '/' + self.stream['atype']
 			if self.stream['avtype'].strip() == '/':
